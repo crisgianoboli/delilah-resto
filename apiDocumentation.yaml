@@ -1,0 +1,608 @@
+swagger: '2.0'
+info:
+  description: This document contains the specification to access and use Delilah Restó API
+  version: 1.0.0
+  title: Delilah Restó
+  termsOfService: 'http://swagger.io/terms/'
+  contact:
+    email: crisgianoboli@gmail.com
+externalDocs:
+  description: Github Repository
+  url: 'https://github.com/crisgianoboli/delilah-resto.'
+host: localhost
+basePath: /
+tags:
+  - name: user
+    description: Operations about users
+  - name: products
+    description: Contains everything about products
+  - name: orders
+    description: Access to Restó orders
+schemes:
+  - http
+paths:
+  /users:
+    get:
+      tags:
+        - user
+      summary: Returns users list
+      description: Returns all the users registered in the resto
+      operationId: getUsers
+      produces:
+        - application/json
+      parameters:
+        - in: header
+          name: authorization
+          description: Authentication Token
+          required: true
+          type: string
+      responses:
+        '200':
+          description: ''
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/user'
+        '401':
+          description: Token has expired. Please login again
+        '403':
+          description: Forbidden
+      security:
+        - store_auth:
+            - 'write:users'
+    post:
+      tags:
+        - user
+      summary: Create user
+      description: ''
+      operationId: createUser
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: Created user object
+          required: true
+          schema:
+            $ref: '#/definitions/user'
+      responses:
+        '201':
+          description: User succesfully created
+        '400':
+          description: Error validating input data
+        '409':
+          description: Account already exists
+  /users/login:
+    post:
+      tags:
+        - user
+      summary: Logs user into the system
+      description: ''
+      operationId: loginUser
+      produces:
+        - application/json
+      parameters:
+        - name: credentials
+          in: body
+          description: The username and password for login
+          required: true
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+              password:
+                type: string
+      responses:
+        '200':
+          description: Successful operation
+          schema:
+            type: object
+            example:
+              accessToken: >-
+                eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6IlNvZkdHIiwiZnVsbG5hbWUiOiJTb2ZpYSBHYWxmcmUiLCJlbWFpbCI6InNvZmdnQGdhbCIsInBob25lIjoiMTIzNCIsImRlbGl2ZXJ5X2FkZHJlc3MiOiJtb3J0IDg1IiwicGFzc3dvcmQiOiIxMjM0NSIsInJvbGVfaWQiOjEsImlhdCI6MTU5MjY5Mzc5MSwiZXhwIjoxNTkyNjk4NzcxfQ.DE0jQMTVNWjmA3sgbwFLoFyQKusf7YfcNusQNhPRevc"
+        '400':
+          description: The username and/or password is incorrect
+  /products:
+    get:
+      tags:
+        - products
+      summary: Returns menu with each product
+      operationId: getMenu
+      produces:
+        - application/json
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/product_stored'
+        '404':
+          description: Not Found
+    post:
+      tags:
+        - products
+      summary: Add a new product to the store
+      consumes:
+        - application/json
+      produces:
+        - ''
+      parameters:
+        - in: header
+          name: authorization
+          description: Authentication Token
+          required: true
+          type: string
+        - in: body
+          name: body
+          description: Product object that needs to be added to the store
+          required: true
+          schema:
+            $ref: '#/definitions/product_update'
+      responses:
+        '201':
+          description: Product created successfully
+        '400':
+          description: Invalid arguments
+        '401':
+          description: Token has expired. Please login again
+        '403':
+          description: Forbidden
+      security:
+        - store_auth:
+            - 'write:products'
+  '/products/{product_id}':
+    get:
+      tags:
+        - products
+      summary: Get product by id
+      produces:
+        - application/json
+      parameters:
+        - name: product_id
+          in: path
+          description: ''
+          required: true
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: ''
+          schema:
+            items:
+              $ref: '#/definitions/product_stored'
+        '404':
+          description: Not Found
+    put:
+      tags:
+        - products
+      summary: Update an existing product
+      description: ''
+      operationId: updateProduct
+      consumes:
+        - application/json
+      produces:
+        - ''
+      parameters:
+        - name: product_id
+          in: path
+          description: ID of product to update
+          required: true
+          type: integer
+          format: int64
+        - in: header
+          name: authorization
+          description: Authentication Token
+          required: true
+          type: string
+        - in: body
+          name: body
+          description: Product's properties that need to be updated in the store
+          required: true
+          schema:
+            $ref: '#/definitions/product_update'
+      responses:
+        '202':
+          description: the product was updated
+        '401':
+          description: Token has expired. Please login again
+        '403':
+          description: Forbidden
+        '404':
+          description: Product not found
+      security:
+        - store_auth:
+            - 'write:products'
+    delete:
+      tags:
+        - products
+      summary: Deletes a product
+      description: ''
+      operationId: deleteProduct
+      produces:
+        - ''
+      parameters:
+        - name: product_id
+          in: path
+          description: Product id to delete
+          required: true
+          type: integer
+          format: int64
+        - in: header
+          name: authorization
+          description: Authentication Token
+          required: true
+          type: string
+      responses:
+        '200':
+          description: the product was deleted
+        '401':
+          description: Token has expired. Please login again
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+      security:
+        - store_auth:
+            - 'write:products'
+  /orders:
+    get:
+      tags:
+        - orders
+      summary: Returns all the orders in the store
+      description: ''
+      operationId: getOrders
+      produces:
+        - application/json
+      parameters:
+        - in: header
+          name: authorization
+          description: Authentication Token
+          required: true
+          type: string
+      responses:
+        '200':
+          description: ''
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/orders'
+        '400':
+          description: Not Found
+      security:
+        - store_auth:
+            - 'write:orders'
+    post:
+      tags:
+        - orders
+      summary: Add a new order to the store
+      description: ''
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: Order that needs to be added
+          required: true
+          schema:
+            $ref: '#/definitions/order_sent'
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/order_complete'
+        '400':
+          description: Error
+  /orders/detail:
+    post:
+      tags:
+        - orders
+      summary: Add a new order detail
+      description: ''
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: Order detail that needs to be added
+          required: true
+          schema:
+            $ref: '#/definitions/order_detail'
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/order_detail_created'
+        '400':
+          description: Error
+  '/orders/{order_id}':
+    put:
+      tags:
+        - orders
+      summary: Update the status of an existing order
+      description: ''
+      operationId: updateOrderStatus
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: order_id
+          description: ''
+          required: true
+          type: integer
+          format: int64
+        - in: header
+          name: authorization
+          description: Authentication Token
+          required: true
+          type: string
+        - in: body
+          name: body
+          description: Order status that needs to be updated
+          required: true
+          schema:
+            type: object
+            properties:
+              status_id:
+                type: integer
+                example: '2'
+      responses:
+        '200':
+          description: the status was modified
+        '401':
+          description: Token has expired. Please login again
+        '403':
+          description: Forbidden
+      security:
+        - store_auth:
+            - 'write:orders'
+    delete:
+      tags:
+        - orders
+      summary: Deletes an order
+      description: ''
+      operationId: deleteOrder
+      produces:
+        - ''
+      parameters:
+        - name: order_id
+          in: path
+          description: Order id to delete
+          required: true
+          type: integer
+          format: int64
+        - in: header
+          name: authorization
+          description: Authentication Token
+          required: true
+          type: string
+      responses:
+        '200':
+          description: The product was deleted
+        '401':
+          description: Token has expired. Please login again
+        '403':
+          description: Forbidden
+      security:
+        - store_auth:
+            - 'write:products'
+securityDefinitions:
+  store_auth:
+    type: oauth2
+    authorizationUrl: localhost/users/login
+    flow: implicit
+    scopes:
+      'write:products': 'create, modify and delete products in the store'
+      'write:orders': modify orders status in the store
+      'write:users': list the registered users
+definitions:
+  user:
+    type: object
+    properties:
+      username:
+        type: string
+      fullname:
+        type: string
+      email:
+        type: string
+      phone:
+        type: string
+      password:
+        type: string
+      delivery_address:
+        type: string
+      role_id:
+        type: integer
+        minimum: 1
+        maximum: 2
+  product_stored:
+    type: object
+    required:
+      - name
+      - price
+    properties:
+      product_id:
+        type: integer
+        format: int64
+      product_name:
+        type: string
+      price:
+        type: number
+      description:
+        type: string
+  product_update:
+    type: object
+    required:
+      - name
+      - price
+    properties:
+      name:
+        type: string
+      price:
+        type: number
+      description:
+        type: string
+  orders:
+    type: object
+    properties:
+      order_id:
+        type: number
+      order_time:
+        type: string
+        example: '20:30:16'
+      estimated_delivery_time:
+        type: string
+        example: '21:30:16'
+      total:
+        type: number
+      user_id:
+        type: number
+      status_id:
+        type: integer
+        enum:
+          - 1 "new"
+      payment_id:
+        type: number
+        description: 'payment method chosen by the user (1,2,3)'
+      Product:
+        type: array
+        items:
+          type: object
+          properties:
+            product_id:
+              type: integer
+              example: '1'
+            name:
+              type: string
+              example: Pizza
+            price:
+              type: number
+            description:
+              type: string
+      OrderStatus:
+        type: array
+        items:
+          type: object
+          properties:
+            status_id:
+              type: integer
+              example: '1'
+            status_name:
+              type: string
+              example: new
+      Payment:
+        type: array
+        items:
+          type: object
+          properties:
+            payment_id:
+              type: integer
+              example: '1'
+            method:
+              type: string
+              example: Cash
+      OrderDetail:
+        type: array
+        items:
+          type: object
+          properties:
+            order_detail_id:
+              type: integer
+            product_id:
+              type: integer
+              example: '2'
+            quantity:
+              type: integer
+              example: '1'
+            subtotal:
+              type: integer
+              example: '500'
+       
+  order_sent:
+    type: object
+    properties:
+      user_id:
+        type: integer
+        example: '3'
+      status_id:
+        type: integer
+        example: '1'
+      payment_id:
+        type: integer
+        example: '1'
+      order_time:
+        type: string
+        example: '22:45:00'
+      estimated_delivery_time:
+        type: string
+        example: '23:20:34'
+      total:
+        type: integer
+        example: '2000'
+  order_complete:
+    type: object
+    properties:
+      order_id:
+        type: integer
+        example: 1
+      user_id:
+        type: integer
+        example: '3'
+      status_id:
+        type: integer
+        example: '1'
+      payment_id:
+        type: integer
+        example: '1'
+      order_time:
+        type: string
+        example: '22:45:00'
+      estimated_delivery_time:
+        type: string
+        example: '23:20:34'
+      total:
+        type: integer
+        example: '2000'
+  order_detail:
+    type: object
+    properties:
+      order_id:
+        type: integer
+        example: '1'
+      product_id:
+        type: integer
+        example: '3'
+      quantity:
+        type: integer
+        example: '1'
+      subtotal:
+        type: integer
+        example: '500'
+  order_detail_created:
+    type: object
+    properties:
+      order_detail_id:
+        type: integer
+        example: '1'
+      order_id:
+        type: integer
+        example: '1'
+      product_id:
+        type: integer
+        example: '2'
+      quantity:
+        type: integer
+        example: '1'
+      subtotal:
+        type: integer
+        example: '500'
+
+
